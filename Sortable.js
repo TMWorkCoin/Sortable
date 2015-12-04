@@ -209,7 +209,12 @@
 			delay: 0,
 			forceFallback: false,
 			fallbackClass: 'sortable-fallback',
-			fallbackOnBody: false
+			fallbackOnBody: false,
+			dropSort: true,
+			dropAdd: true,
+			dropRemove: true,
+			dropUpdate: true,
+			dropRevert: false
 		};
 
 
@@ -250,6 +255,9 @@
 		constructor: Sortable,
 
 		_onTapStart: function (/** Event|TouchEvent */evt) {
+			// stop propagation to prevent triggering container Sortable
+			evt.stopPropagation();
+
 			var _this = this,
 				el = this.el,
 				options = this.options,
@@ -258,7 +266,7 @@
 				target = (touch || evt).target,
 				originalTarget = target,
 				filter = options.filter;
-
+//console.log('_onTapStart');
 
 			if (type === 'mousedown' && evt.button !== 0 || options.disabled) {
 				return; // only left button or enabled
@@ -272,7 +280,7 @@
 
 			// get the index of the dragged element within its parent
 			oldIndex = _index(target, options.draggable);
-
+//console.log('oldIndex: ' + oldIndex);
 			// Check filter
 			if (typeof filter === 'function') {
 				if (filter.call(this, evt, target, this)) {
@@ -461,7 +469,6 @@
 			}
 		},
 
-
 		_onTouchMove: function (/**TouchEvent*/evt) {
 			if (tapEvt) {
 				// only set the status to dragging, when we are actually dragging
@@ -558,6 +565,8 @@
 		},
 
 		_onDragOver: function (/**Event*/evt) {
+//console.log('_onDragOver');
+//console.log(evt)
 			var el = this.el,
 				target,
 				dragRect,
@@ -729,6 +738,9 @@
 		},
 
 		_onDrop: function (/**Event*/evt) {
+console.log('_onDrop')
+//console.log(evt);
+
 			var el = this.el,
 				options = this.options;
 
@@ -747,62 +759,90 @@
 			this._offUpEvents();
 
 			if (evt) {
+
 				if (moved) {
+console.log('was moved')
 					evt.preventDefault();
 					!options.dropBubble && evt.stopPropagation();
 				}
 
 				ghostEl && ghostEl.parentNode.removeChild(ghostEl);
-
 				if (dragEl) {
+
 					if (this.nativeDraggable) {
 						_off(dragEl, 'dragend', this);
 					}
-
 					_disableDraggable(dragEl);
 
 					// Remove class's
 					_toggleClass(dragEl, this.options.ghostClass, false);
 					_toggleClass(dragEl, this.options.chosenClass, false);
 
+
 					if (rootEl !== parentEl) {
+//console.log('rootEl !== parentEl')
 						newIndex = _index(dragEl, options.draggable);
-
+//console.log('newIndex: ' + newIndex)
 						if (newIndex >= 0) {
-							// drag from one list and drop into another
-							_dispatchEvent(null, parentEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
-							_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+//console.log(options);
+							if (options.dropSort) {
+								// drag from one list and drop into another
+								_dispatchEvent(null, parentEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+								_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+							}
 
-							// Add event
-							_dispatchEvent(null, parentEl, 'add', dragEl, rootEl, oldIndex, newIndex);
+							if (options.dropAdd) {
+								// Add event
+								_dispatchEvent(null, parentEl, 'add', dragEl, rootEl, oldIndex, newIndex);
+							}
 
-							// Remove event
-							_dispatchEvent(this, rootEl, 'remove', dragEl, rootEl, oldIndex, newIndex);
+							if (options.dropRemove) {
+								// Remove event
+								_dispatchEvent(this, rootEl, 'remove', dragEl, rootEl, oldIndex, newIndex);
+							}
+
+							if (options.dropRevert) {
+
+								_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
+
+							}
+
 						}
+
 					}
 					else {
+console.log('rootEl === parentEl')
 						// Remove clone
 						cloneEl && cloneEl.parentNode.removeChild(cloneEl);
 
 						if (dragEl.nextSibling !== nextEl) {
 							// Get the index of the dragged element within its parent
 							newIndex = _index(dragEl, options.draggable);
-
+console.log('newIndex: ' + newIndex);
 							if (newIndex >= 0) {
 								// drag & drop within the same list
-								_dispatchEvent(this, rootEl, 'update', dragEl, rootEl, oldIndex, newIndex);
-								_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+								if (options.dropUpdate) {
+									_dispatchEvent(this, rootEl, 'update', dragEl, rootEl, oldIndex, newIndex);
+								}
+								if (options.dropSort) {
+									_dispatchEvent(this, rootEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
+								}
 							}
+
+							if (options.dropRevert) {
+								_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
+							}
+
 						}
 					}
 
-					if (Sortable.active) {
+					if (Sortable.active && !options.dropRevert) {
+console.log('Sortable.active')
 						if (newIndex === null || newIndex === -1) {
 							newIndex = oldIndex;
 						}
-
-						_dispatchEvent(this, rootEl, 'end', dragEl, rootEl, oldIndex, newIndex);
-
+						//_dispatchEvent(this, rootEl, 'end', dragEl, rootEl, oldIndex, newIndex);
+						_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
 						// Save sorting
 						this.save();
 					}
@@ -1083,10 +1123,13 @@
 
 		evt.oldIndex = startIndex;
 		evt.newIndex = newIndex;
+//console.log('_dispatchEvent')
 
 		rootEl.dispatchEvent(evt);
 
 		if (options[onName]) {
+//console.log(onName)
+//console.log(evt)
 			options[onName].call(sortable, evt);
 		}
 	}
@@ -1170,12 +1213,18 @@
 		}
 
 		while (el && (el = el.previousElementSibling)) {
-			if (el.nodeName.toUpperCase() !== 'TEMPLATE'
-					&& _matches(el, selector)) {
+//console.log('looking for sibling');
+//console.log(el);
+//console.log(el.nodeName.toUpperCase());
+//console.log(selector);
+			if (
+				el.nodeName.toUpperCase() !== 'TEMPLATE'
+				&& _matches(el, selector)
+			) {
 				index++;
 			}
 		}
-
+//console.log('index: ' + index)
 		return index;
 	}
 

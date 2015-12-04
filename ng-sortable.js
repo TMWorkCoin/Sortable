@@ -67,6 +67,7 @@
 				restrict: 'AC',
 				scope: { ngSortable: "=?" },
 				link: function (scope, $el) {
+//console.log('link');
 					var el = $el[0],
 						options = angular.extend(scope.ngSortable || {}, ngSortableConfig),
 						watchers = [],
@@ -77,22 +78,29 @@
 					el[expando] = getSource;
 
 					function _emitEvent(/**Event*/evt, /*Mixed*/item) {
+//console.log('_emitEvent')
+//console.log($el);
+//console.log(evt);
 						var name = 'on' + evt.type.charAt(0).toUpperCase() + evt.type.substr(1);
 						var source = getSource();
-
+//console.log(source);
 						/* jshint expr:true */
 						options[name] && options[name]({
 							model: item || source[evt.newIndex],
 							models: source,
 							oldIndex: evt.oldIndex,
-							newIndex: evt.newIndex
+							newIndex: evt.newIndex,
+							from: evt.from,
+							to: evt.to,
+							item: evt.item
 						});
 					}
 
 
 					function _sync(/**Event*/evt) {
+//console.log('\n\n_sync')
 						var items = getSource();
-
+//console.log(items);
 						if (!items) {
 							// Without ng-repeat
 							return;
@@ -103,7 +111,7 @@
 
 						if (el !== evt.from) {
 							var prevItems = evt.from[expando]();
-
+//console.log('el !== evt.from')
 							removed = prevItems[oldIndex];
 
 							if (evt.clone) {
@@ -120,6 +128,9 @@
 							evt.from.insertBefore(evt.item, nextSibling); // revert element
 						}
 						else {
+//console.log('el === evt.from')
+//console.log('newIndex: ' + newIndex)
+//console.log('oldIndex: ' + oldIndex)
 							items.splice(newIndex, 0, items.splice(oldIndex, 1)[0]);
 						}
 
@@ -158,6 +169,8 @@
 					}));
 
 					$el.on('$destroy', function () {
+//console.log('$el.on("destroy")')
+//console.log($el);
 						angular.forEach(watchers, function (/** Function */unwatch) {
 							unwatch();
 						});
