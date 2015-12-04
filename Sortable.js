@@ -266,7 +266,6 @@
 				target = (touch || evt).target,
 				originalTarget = target,
 				filter = options.filter;
-//console.log('_onTapStart');
 
 			if (type === 'mousedown' && evt.button !== 0 || options.disabled) {
 				return; // only left button or enabled
@@ -280,7 +279,7 @@
 
 			// get the index of the dragged element within its parent
 			oldIndex = _index(target, options.draggable);
-//console.log('oldIndex: ' + oldIndex);
+
 			// Check filter
 			if (typeof filter === 'function') {
 				if (filter.call(this, evt, target, this)) {
@@ -565,8 +564,7 @@
 		},
 
 		_onDragOver: function (/**Event*/evt) {
-//console.log('_onDragOver');
-//console.log(evt)
+
 			var el = this.el,
 				target,
 				dragRect,
@@ -738,8 +736,6 @@
 		},
 
 		_onDrop: function (/**Event*/evt) {
-console.log('_onDrop')
-//console.log(evt);
 
 			var el = this.el,
 				options = this.options;
@@ -761,7 +757,6 @@ console.log('_onDrop')
 			if (evt) {
 
 				if (moved) {
-console.log('was moved')
 					evt.preventDefault();
 					!options.dropBubble && evt.stopPropagation();
 				}
@@ -780,11 +775,9 @@ console.log('was moved')
 
 
 					if (rootEl !== parentEl) {
-//console.log('rootEl !== parentEl')
 						newIndex = _index(dragEl, options.draggable);
-//console.log('newIndex: ' + newIndex)
 						if (newIndex >= 0) {
-//console.log(options);
+
 							if (options.dropSort) {
 								// drag from one list and drop into another
 								_dispatchEvent(null, parentEl, 'sort', dragEl, rootEl, oldIndex, newIndex);
@@ -802,23 +795,20 @@ console.log('was moved')
 							}
 
 							if (options.dropRevert) {
-
 								_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
-
 							}
 
 						}
 
 					}
 					else {
-console.log('rootEl === parentEl')
 						// Remove clone
 						cloneEl && cloneEl.parentNode.removeChild(cloneEl);
 
 						if (dragEl.nextSibling !== nextEl) {
 							// Get the index of the dragged element within its parent
 							newIndex = _index(dragEl, options.draggable);
-console.log('newIndex: ' + newIndex);
+
 							if (newIndex >= 0) {
 								// drag & drop within the same list
 								if (options.dropUpdate) {
@@ -837,11 +827,10 @@ console.log('newIndex: ' + newIndex);
 					}
 
 					if (Sortable.active && !options.dropRevert) {
-console.log('Sortable.active')
+
 						if (newIndex === null || newIndex === -1) {
 							newIndex = oldIndex;
 						}
-						//_dispatchEvent(this, rootEl, 'end', dragEl, rootEl, oldIndex, newIndex);
 						_dispatchEvent(this, parentEl, 'end', dragEl, rootEl, oldIndex, newIndex);
 						// Save sorting
 						this.save();
@@ -1123,13 +1112,9 @@ console.log('Sortable.active')
 
 		evt.oldIndex = startIndex;
 		evt.newIndex = newIndex;
-//console.log('_dispatchEvent')
-
 		rootEl.dispatchEvent(evt);
 
 		if (options[onName]) {
-//console.log(onName)
-//console.log(evt)
 			options[onName].call(sortable, evt);
 		}
 	}
@@ -1213,10 +1198,6 @@ console.log('Sortable.active')
 		}
 
 		while (el && (el = el.previousElementSibling)) {
-//console.log('looking for sibling');
-//console.log(el);
-//console.log(el.nodeName.toUpperCase());
-//console.log(selector);
 			if (
 				el.nodeName.toUpperCase() !== 'TEMPLATE'
 				&& _matches(el, selector)
@@ -1224,7 +1205,6 @@ console.log('Sortable.active')
 				index++;
 			}
 		}
-//console.log('index: ' + index)
 		return index;
 	}
 
