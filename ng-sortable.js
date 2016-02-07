@@ -68,12 +68,20 @@
 				scope: { ngSortable: "=?" },
 				link: function (scope, $el) {
 
+					var options = angular.extend(scope.ngSortable || {}, ngSortableConfig);
+
+					if (options.disabled) {
+						$el.addClass('sortable-disabled');
+						return false;
+					}
+
+
 					var el = $el[0],
-						options = angular.extend(scope.ngSortable || {}, ngSortableConfig),
 						watchers = [],
 						getSource = getSourceFactory(el, scope),
 						sortable
 					;
+
 
 					el[expando] = getSource;
 
