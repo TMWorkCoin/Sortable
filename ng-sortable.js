@@ -33,32 +33,79 @@
 	angular.module('ng-sortable', [])
 		.constant('ngSortableVersion', '0.4.0')
 		.constant('ngSortableConfig', {})
-		.directive('ngSortable', ['$parse', 'ngSortableConfig', function ($parse, ngSortableConfig) {
+		.directive('ngSortable', ['$parse', 'ngSortableConfig', '$rootScope', function ($parse, ngSortableConfig, $rootScope) {
 			var removed,
 				nextSibling,
-				getSourceFactory = function getSourceFactory(el, scope) {
-					var ngRepeat = [].filter.call(el.childNodes, function (node) {
-						return (
-								(node.nodeType === 8) &&
-								(node.nodeValue.indexOf('ngRepeat:') !== -1)
-							);
-					})[0];
+        models = [],
+				getSourceFactory = function getSourceFactory(el, scope, options, attr) {
+          //console.log('getSourceFactory');
+          if($rootScope.debugInfoEnabled === true) {
+            var ngRepeat = [].filter.call(el.childNodes, function (node) {
+              //console.log('ngRepeat filter node',node);
+              return (
+  								(node.nodeType === 8) &&
+  								(node.nodeValue.indexOf('ngRepeat:') !== -1)
+  							);
+  					})[0];
 
-					if (!ngRepeat) {
-						// Without ng-repeat
-						return function () {
-							return null;
-						};
-					}
+  					if (!ngRepeat) {
+  						// Without ng-repeat
+  						return function () {
+  							return null;
+  						};
+  					}
 
-					// tests: http://jsbin.com/kosubutilo/1/edit?js,output
-					ngRepeat = ngRepeat.nodeValue.match(/ngRepeat:\s*(?:\(.*?,\s*)?([^\s)]+)[\s)]+in\s+([^\s|]+)/);
+  					// tests: http://jsbin.com/kosubutilo/1/edit?js,output
+  					ngRepeat = ngRepeat.nodeValue.match(/ngRepeat:\s*(?:\(.*?,\s*)?([^\s)]+)[\s)]+in\s+([^\s|]+)/);
 
-					var itemsExpr = $parse(ngRepeat[2]);
+            //console.log('ngRepeat',ngRepeat);
 
-					return function () {
-						return itemsExpr(scope.$parent) || [];
-					};
+            var itemsExpr = $parse(ngRepeat[2]);
+
+            // console.log('el', attr.listName);
+            // console.log('itemsExpr',itemsExpr(scope.$parent));
+
+            return function () {
+
+  						return itemsExpr(scope.$parent) || [];
+  					};
+          }
+          else {
+            //console.log('el', attr.listName);
+
+            if ( options.hasOwnProperty('getModels') ) {
+
+              models = options.getModels();
+              //console.log('getModels', options.getModels());
+            }
+            else {
+
+              if ( models.length > 0 ) {
+
+                var subList = [];
+
+                models.map(function(list){
+
+                  if ( list.name === attr.listName ) {
+                    //console.log(list.cards);
+                    subList = list.cards;
+                    return false;
+                  }
+                });
+                //console.log('subList', subList);
+                return function () {
+                  return subList;
+                };
+
+              }
+              else {
+
+                return function () {
+                  return null;
+                };
+              }
+            }
+          }
 				};
 
 
@@ -66,10 +113,10 @@
 			return {
 				restrict: 'AC',
 				scope: { ngSortable: "=?" },
-				link: function (scope, $el) {
+				link: function (scope, $el, attr) {
 
 					var options = angular.extend(scope.ngSortable || {}, ngSortableConfig);
-
+          //console.log('options', options);
 					if (options.disabled) {
 						$el.addClass('sortable-disabled');
 						return false;
@@ -78,7 +125,7 @@
 
 					var el = $el[0],
 						watchers = [],
-						getSource = getSourceFactory(el, scope),
+						getSource = getSourceFactory(el, scope, options, attr),
 						sortable
 					;
 
