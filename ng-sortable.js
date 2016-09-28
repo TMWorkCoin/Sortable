@@ -39,13 +39,14 @@
         models = [],
 				getSourceFactory = function getSourceFactory(el, scope, options, attr) {
           //console.log('getSourceFactory');
-          if($rootScope.debugInfoEnabled === true) {
+          if ( $rootScope.debugInfoEnabled === true ) {
+
             var ngRepeat = [].filter.call(el.childNodes, function (node) {
               //console.log('ngRepeat filter node',node);
               return (
-  								(node.nodeType === 8) &&
-  								(node.nodeValue.indexOf('ngRepeat:') !== -1)
-  							);
+								(node.nodeType === 8) &&
+								(node.nodeValue.indexOf('ngRepeat:') !== -1)
+							);
   					})[0];
 
   					if (!ngRepeat) {
@@ -78,33 +79,33 @@
               models = options.getModels();
               //console.log('getModels', options.getModels());
             }
-            else {
 
-              if ( models.length > 0 ) {
+						if ( models.length > 0 ) {
 
-                var subList = [];
+							var subList = [];
 
-                models.map(function(list){
+							models.map(function(list){
 
-                  if ( list.name === attr.listName ) {
-                    //console.log(list.cards);
-                    subList = list.cards;
-                    return false;
-                  }
-                });
-                //console.log('subList', subList);
-                return function () {
-                  return subList;
-                };
+								if ( list.name === attr.listName ) {
+									//console.log(list.cards);
+									subList = list.cards;
+									return false;
+								}
+							});
+							//console.log('subList', subList);
+							return function () {
 
-              }
-              else {
+								return subList;
+							};
 
-                return function () {
-                  return null;
-                };
-              }
-            }
+						}
+						else {
+
+							return function () {
+
+								return null;
+							};
+						}
           }
 				};
 
