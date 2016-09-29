@@ -37,8 +37,9 @@
       var removed,
         nextSibling,
         models = [],
+        curView = '',
         getSourceFactory = function getSourceFactory(el, scope, options, attr) {
-          //console.log('getSourceFactory');
+          //console.log('getSourceFactory; ', scope, options, attr);
           if ( $rootScope.debugInfoEnabled === true ) {
 
             var ngRepeat = [].filter.call(el.childNodes, function (node) {
@@ -50,6 +51,7 @@
             })[0];
 
             if (!ngRepeat) {
+              //console.log('no ng repeat')
               // Without ng-repeat
               return function () {
                 return null;
@@ -59,12 +61,8 @@
             // tests: http://jsbin.com/kosubutilo/1/edit?js,output
             ngRepeat = ngRepeat.nodeValue.match(/ngRepeat:\s*(?:\(.*?,\s*)?([^\s)]+)[\s)]+in\s+([^\s|]+)/);
 
-            //console.log('ngRepeat',ngRepeat);
 
             var itemsExpr = $parse(ngRepeat[2]);
-
-            // console.log('el', attr.listName);
-            // console.log('itemsExpr',itemsExpr(scope.$parent));
 
             return function () {
 
@@ -72,27 +70,43 @@
             };
           }
           else {
-            //console.log('el', attr.listName);
 
             if ( options.hasOwnProperty('getModels') ) {
 
               models = options.getModels();
-              //console.log('getModels', options.getModels());
+
+            }
+
+            if (options.hasOwnProperty('curView') ) {
+
+              curView = options.curView;
             }
 
             if ( models.length > 0 ) {
 
               var subList = [];
 
-              models.map(function(list){
+              if (curView === 'tags') {
 
-                if ( list.name === attr.listName ) {
-                  //console.log(list.cards);
-                  subList = list.cards;
+                models.map(function(list){
+
+                  if ( list.name === attr.listName ) {
+                    subList = list.cards;
+                    return false;
+                  }
+                });
+              }
+              else if (curView === 'grid'
+                      || curView === 'list'
+                      || curView === 'edit' ) {
+
+                models.map(function(card) {
+                  subList.push(card);
                   return false;
-                }
-              });
-              //console.log('subList', subList);
+                })
+              }
+
+
               return function () {
 
                 return subList;
@@ -117,7 +131,7 @@
         link: function (scope, $el, attr) {
 
           var options = angular.extend(scope.ngSortable || {}, ngSortableConfig);
-          //console.log('options', options);
+
           if (options.disabled) {
             $el.addClass('sortable-disabled');
             return false;
@@ -134,10 +148,8 @@
           el[expando] = getSource;
 
           function _emitEvent(/**Event*/evt, /*Mixed*/item) {
-
             var name = 'on' + evt.type.charAt(0).toUpperCase() + evt.type.substr(1);
             var source = getSource();
-
             /* jshint expr:true */
             options[name] && options[name]({
               model: item || source[evt.newIndex],
@@ -153,11 +165,11 @@
 
           function _sync(/**Event*/evt) {
             var items = getSource();
-
             if (!items) {
               // Without ng-repeat
               return;
             }
+
 
             var oldIndex = evt.oldIndex,
               newIndex = evt.newIndex;
