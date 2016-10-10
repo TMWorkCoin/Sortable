@@ -40,7 +40,7 @@
         curView = '',
         getSourceFactory = function getSourceFactory(el, scope, options, attr) {
           var deferred = $q.defer();
-          //console.log('getSourceFactory: ', options.getModels);
+          //console.log('getSourceFactory: ', options);
           if ( $rootScope.debugInfoEnabled === true ) {
 
             var ngRepeat = [].filter.call(el.childNodes, function (node) {
@@ -54,9 +54,11 @@
             if (!ngRepeat) {
               //console.log('no ng repeat')
               // Without ng-repeat
-              return function () {
-                return null;
-              };
+              deferred.resolve(
+                function () {
+                  return null;
+                }
+              );
             }
 
             // tests: http://jsbin.com/kosubutilo/1/edit?js,output
@@ -66,7 +68,7 @@
             var itemsExpr = $parse(ngRepeat[2]);
             var result = function () {
               return itemsExpr(scope.$parent) || [];
-            }
+            };
 
             deferred.resolve(result);
           }
@@ -155,6 +157,8 @@
         scope: { ngSortable: "=?" },
         link: function (scope, $el, attr) {
 
+          // console.log('ng-sortable',scope.ngSortable);
+          // console.log('$el',$el);
           var options = angular.extend(scope.ngSortable || {}, ngSortableConfig);
 
           if (options.disabled) {
