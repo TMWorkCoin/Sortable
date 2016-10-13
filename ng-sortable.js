@@ -19,7 +19,6 @@
 })(function (angular, Sortable) {
   'use strict';
 
-
   /**
    * @typedef   {Object}        ngSortEvent
    * @property  {*}             model      List item
@@ -37,128 +36,19 @@
       var removed,
         nextSibling,
         models = [],
-        curView = '',
-        getSourceFactory = function getSourceFactory(el, scope, options, attr) {
-          var deferred = $q.defer();
-          //console.log('getSourceFactory: ', options);
-          if ( $rootScope.debugInfoEnabled === true ) {
+        curView = '';
 
-            var ngRepeat = [].filter.call(el.childNodes, function (node) {
-              //console.log('ngRepeat filter node',node);
-              return (
-                (node.nodeType === 8) &&
-                (node.nodeValue.indexOf('ngRepeat:') !== -1)
-              );
-            })[0];
-
-            if (!ngRepeat) {
-              //console.log('no ng repeat')
-              // Without ng-repeat
-              deferred.resolve(
-                function () {
-                  return null;
-                }
-              );
-            }
-
-            // tests: http://jsbin.com/kosubutilo/1/edit?js,output
-            ngRepeat = ngRepeat.nodeValue.match(/ngRepeat:\s*(?:\(.*?,\s*)?([^\s)]+)[\s)]+in\s+([^\s|]+)/);
-
-
-            var itemsExpr = $parse(ngRepeat[2]);
-            var result = function () {
-              return itemsExpr(scope.$parent) || [];
-            };
-
-            deferred.resolve(result);
-          }
-          else {
-
-            var processModels = function() {
-
-              if (options.hasOwnProperty('curView') ) {
-
-                curView = options.curView;
-              }
-
-              if ( models.length > 0 ) {
-
-                var subList = [];
-
-                if (curView === 'tags') {
-
-                  models.map(function(list){
-                    if ( list.name === attr.listName ) {
-                      subList = list.cards;
-                      return false;
-                    }
-                  });
-                }
-                else if (
-                  curView === 'grid'
-                  || curView === 'list'
-                  || curView === 'edit'
-                ) {
-
-                  //console.log('el',el);
-
-                  models.map(function(card) {
-                    subList.push(card);
-                    return false;
-                  });
-                }
-
-                //console.log('here A');
-                return function () {
-
-                  return subList;
-                };
-
-              }
-              else {
-                //console.log('here B');
-
-                return function () {
-                  return null;
-                };
-              }
-            };
-
-            if ( options.hasOwnProperty('getModels') ) {
-
-              //console.log(options, el.children.length);
-
-              options.getModels()
-                .then(function(_models){
-                  //console.log('it has $loaded',_models);
-                  models = _models;
-                  //console.log('models',models);
-                })
-                .then(function(){
-                  deferred.resolve( processModels() );
-                });
-            }
-            else {
-              //console.log('no getModels found');
-
-              deferred.resolve( processModels() );
-
-
-            }
-          }
-
-          return deferred.promise;
-        };
-
-
-      // Export
       return {
         restrict: 'AC',
-        scope: { ngSortable: "=?" },
+        scope: {
+          ngSortable: "=?",
+          cardList: "=ngSortableList"
+        },
         link: function (scope, $el, attr) {
 
-          // console.log('ng-sortable',scope.ngSortable);
+          // console.log('scope.cardList',scope.cardList);
           // console.log('$el',$el);
+
           var options = angular.extend(scope.ngSortable || {}, ngSortableConfig);
 
           if (options.disabled) {
@@ -167,29 +57,18 @@
             return false;
           }
 
-          getSourceFactory($el[0], scope, options, attr)
-            .then(function(_getSource){
-
-            //var dbon = $rootScope.debugInfoEnabled === true;
-
-
-
-
-
-            //console.log($el[0], options);
             var el = $el[0],
-              watchers = [],
-              getSource = _getSource,//getSourceFactory(el, scope, options, attr),
-              sortable
-            ;
+            watchers = [],
+            getSource = scope.cardList,
+            sortable;
 
-            //console.log('getSource',getSource);
-            el[expando] = getSource;
+            el[expando] = scope.cardList;
 
             function _emitEvent(/**Event*/evt, /*Mixed*/item) {
+
               var name = 'on' + evt.type.charAt(0).toUpperCase() + evt.type.substr(1);
-              var source = getSource();
-              //console.log('name',name);
+              var source = scope.cardList;
+              //console.log('source',source);
 
               /* jshint expr:true */
               options[name] && options[name]({
@@ -201,12 +80,10 @@
                 to: evt.to,
                 item: evt.item
               });
-
-              //console.log('options[name]',options[name]);
             }
 
             function _sync(/**Event*/evt) {
-              var items = getSource();
+              var items = scope.cardList;
               if (!items) {
                 // Without ng-repeat
                 return;
@@ -300,7 +177,6 @@
                 }
               }));
             });
-          });
         }
       };
     }]);
