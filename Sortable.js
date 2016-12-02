@@ -727,15 +727,21 @@
 		},
 
 		_offUpEvents: function () {
-			var ownerDocument = this.el.ownerDocument;
+			if (this.el) {
+				var ownerDocument = this.el.ownerDocument;
 
-			_off(document, 'touchmove', this._onTouchMove);
-			_off(ownerDocument, 'mouseup', this._onDrop);
-			_off(ownerDocument, 'touchend', this._onDrop);
-			_off(ownerDocument, 'touchcancel', this._onDrop);
+				_off(document, 'touchmove', this._onTouchMove);
+				_off(ownerDocument, 'mouseup', this._onDrop);
+				_off(ownerDocument, 'touchend', this._onDrop);
+				_off(ownerDocument, 'touchcancel', this._onDrop);
+			}
+			else {
+				//nothing, prevents breaking
+			}
 		},
 
 		_onDrop: function (/**Event*/evt) {
+
 
 			var el = this.el,
 				options = this.options;
@@ -746,6 +752,8 @@
 
 			// Unbind events
 			_off(document, 'mousemove', this._onTouchMove);
+
+
 
 			if (this.nativeDraggable) {
 				_off(document, 'drop', this);
@@ -859,6 +867,7 @@
 
 				activeGroup =
 				Sortable.active = null;
+
 			}
 		},
 
@@ -1038,7 +1047,12 @@
 
 
 	function _off(el, event, fn) {
-		el.removeEventListener(event, fn, false);
+		if (el) {
+			el.removeEventListener(event, fn, false);
+		}
+		else {
+			//prevents breaking
+		}
 	}
 
 
@@ -1121,28 +1135,36 @@
 
 
 	function _onMove(fromEl, toEl, dragEl, dragRect, targetEl, targetRect) {
-		var evt,
-			sortable = fromEl[expando],
-			onMoveFn = sortable.options.onMove,
-			retVal;
 
-		evt = document.createEvent('Event');
-		evt.initEvent('move', true, true);
+		if (fromEl[expando] && fromEl[expando].options) {
+			var evt,
+				sortable = fromEl[expando],
+				onMoveFn = sortable.options.onMove,
+				retVal;
 
-		evt.to = toEl;
-		evt.from = fromEl;
-		evt.dragged = dragEl;
-		evt.draggedRect = dragRect;
-		evt.related = targetEl || toEl;
-		evt.relatedRect = targetRect || toEl.getBoundingClientRect();
+			evt = document.createEvent('Event');
+			evt.initEvent('move', true, true);
 
-		fromEl.dispatchEvent(evt);
+			evt.to = toEl;
+			evt.from = fromEl;
+			evt.dragged = dragEl;
+			evt.draggedRect = dragRect;
+			evt.related = targetEl || toEl;
+			evt.relatedRect = targetRect || toEl.getBoundingClientRect();
 
-		if (onMoveFn) {
-			retVal = onMoveFn.call(sortable, evt);
+			fromEl.dispatchEvent(evt);
+
+			if (onMoveFn) {
+				retVal = onMoveFn.call(sortable, evt);
+			}
+
+			return retVal;
 		}
 
-		return retVal;
+		else {
+			//something went wrong - wait for the drop and start over
+		}
+
 	}
 
 
